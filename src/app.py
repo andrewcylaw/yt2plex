@@ -81,7 +81,7 @@ def _get_non_progressive(vid_partial: Stream, audio_partial: Stream, plex_server
     Uses ffmpeg to merge the audio and video tracks and create an mp4.
 
     :param vid_partial: pytube streaming object to download of highest quality video
-    :param audio_partial: pytubs streaming object to download of highest quality audio
+    :param audio_partial: pytube streaming object to download of highest quality audio
     :return: tuple of new video path and total file size downloaded in mb
     """
     VIDEO_TEMP, AUDIO_TEMP = f'{plex_server}/video_temp/', f'{plex_server}/audio_temp/'
@@ -108,6 +108,7 @@ def _get_non_progressive(vid_partial: Stream, audio_partial: Stream, plex_server
 
     return Path(merged_path), fsize
 
+
 def _merge_audio_video(vid_path: str, audio_path: str, output_path: str) -> str:
     """
     Uses ffmpeg to merge the given video and audio and output an mp4
@@ -128,10 +129,11 @@ def _merge_audio_video(vid_path: str, audio_path: str, output_path: str) -> str:
         .run(overwrite_output=True)
     logger.info(f'Successfully merged audio and video to [{full_output_path}]')
 
-    return output_path
+    return full_output_path
 
 
 def _setup_ffmpeg_path(ffmpeg_path: str) -> None:
+    # Helper function that adds the project-local ffmpeg to path temporarily
     logger.info(f'Adding ffmpeg {ffmpeg_path} to path')
     os.environ['PATH'] += os.pathsep + ffmpeg_path
     logger.info(f'----------------------------------------------------------------------')
