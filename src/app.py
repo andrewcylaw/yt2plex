@@ -60,7 +60,7 @@ def youtube_dl(video: str, force_progressive: bool) -> str:
     logger.info(f'Successfully downloaded a total of     [{tot_size}mb]')
     logger.info(f'Successfully downloaded video to       [{path}]')
 
-    return f"Successfully downloaded {round(tot_size, 3)}mb, and created video {path}"
+    return f"Successfully downloaded {tot_size}mb, and created video {path}"
 
 
 def _get_progressive(partial: Stream) -> Tuple[str, float]:
@@ -70,7 +70,7 @@ def _get_progressive(partial: Stream) -> Tuple[str, float]:
     :return: tuple of new video path and total file size downloaded in mb
     """
     path = partial.download(env_settings.plex_server)
-    return Path(path), os.stat(path).st_size / (1024 * 1024)
+    return Path(path), _fsize_mb(path)
 
 
 def _get_non_progressive(vid_partial: Stream, audio_partial: Stream, plex_server: str) -> Tuple[str, float]:
@@ -89,15 +89,14 @@ def _get_non_progressive(vid_partial: Stream, audio_partial: Stream, plex_server
     # Not async
     logger.info(f'Beginning download for audio portion:  [{audio_partial.default_filename}]')
     audio_path = audio_partial.download(AUDIO_TEMP)
-    audio_size_mb = round(os.stat(audio_path).st_size / (1024 * 1024), 3)
+    audio_size_mb = _fsize_mb(audio_path)
     logger.info(f'Finished download for audio portion:   [{audio_partial.default_filename}, {audio_size_mb}mb]')
 
     logger.info(f'Beginning download for video portion:  [{vid_partial.default_filename}]')
     vid_path = vid_partial.download(VIDEO_TEMP)
-    vid_size_mb = round(os.stat(vid_path).st_size / (1024 * 1024), 3)
+    vid_size_mb =  _fsize_mb(vid_path)
     logger.info(f'Finished download for video portion:   [{vid_partial.default_filename}, {vid_size_mb}mb]')
 
-    fsize = (os.stat(vid_path).st_size + os.stat(audio_path).st_size) / (1024 * 1024)
     merged_path = _merge_audio_video(vid_path, audio_path, plex_server)
 
     # Delete temp files/folder
@@ -106,7 +105,7 @@ def _get_non_progressive(vid_partial: Stream, audio_partial: Stream, plex_server
     os.rmdir(VIDEO_TEMP)
     os.rmdir(AUDIO_TEMP)
 
-    return Path(merged_path), fsize
+    return Path(merged_path), audio_size_mb + vid_size_mb
 
 
 def _merge_audio_video(vid_path: str, audio_path: str, output_path: str) -> str:
@@ -137,4 +136,9 @@ def _setup_ffmpeg_path(ffmpeg_path: str) -> None:
     logger.info(f'Adding ffmpeg {ffmpeg_path} to path')
     os.environ['PATH'] += os.pathsep + ffmpeg_path
     logger.info(f'----------------------------------------------------------------------')
+
+
+def _fsize_mb(fpath: str) -> float:
+    # Helper method for getting file size of given path
+    return round(os.stat(fpath).st_size / (1024 * 1024), 3)
 
